@@ -1,0 +1,33 @@
+trigger:
+- main
+- master
+
+pool:
+  vmImage: "ubuntu-latest"
+  
+stages:
+  - stage: DeployApiGatewayHomolog
+    displayName: Deploy Api Gateway Homolog
+    jobs:
+      - job:
+        displayName: Deploy Api Gateway Homolog
+        steps:
+          - task: AWSCLI@1
+            inputs:
+              awsCredentials: ''
+              regionName: 'us-east-2'
+              awsCommand: 'apigateway'
+              awsSubCommand: 'put-rest-api'
+              awsArguments: '--rest-api-id vkj2r8eqfk --mode overwrite --body fileb://$(System.DefaultWorkingDirectory)/services/api/cqt-gateway.json'
+
+          - task: AWSCLI@1
+            inputs:
+              awsCredentials: ''
+              regionName: 'us-east-2'
+              awsCommand: 'apigateway'
+              awsSubCommand: 'create-deployment'
+              awsArguments: '--rest-api-id gdfadlnscj --stage-name Stagging'
+
+
+
+ 

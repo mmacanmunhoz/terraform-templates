@@ -1,0 +1,43 @@
+name: main
+
+on:
+  workflow_call:
+    inputs:
+      id_api_gateway:
+        required: true
+        type: string
+      environment:
+        required: true
+        type: string
+      region:
+        required: true
+        type: string
+      path_contract:
+        required: true 
+        type: string
+    secrets:
+      CI_AWS_ACCESS_KEY_ID:
+        required: true
+      CI_AWS_SECRET_ACCESS_KEY:
+        required: true
+
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.CI_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.CI_AWS_REGION }}
+
+      - name: Update Contract Api Gateway
+        run: |
+          aws apigateway put-rest-api --rest-api-id ${{ inputs.id_api_gateway }} --mode overwrite --body 'fileb://${{ inputs.path_contract }}'
+
+      - name: Deployment Api Gateway
+        run: |
+          aws apigateway create-deployment --region ${{ inputs.region }} --rest-api-id ${{ inputs.id_api_gateway }} --stage-name ${{ inputs.environment }}
