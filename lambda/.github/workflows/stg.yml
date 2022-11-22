@@ -1,0 +1,21 @@
+name: 📦🚀 Deploy Staging
+
+on:
+  push:
+    branches:
+      - main
+
+
+  workflow_dispatch:
+
+jobs:
+  build-staging:
+    uses: ./.github/workflows/main.yml
+    with:
+      ecr_repository_uri: 
+      github_environment: 
+      aws_region: 
+      lambda_name: 
+    secrets:
+      ECR_AWS_ACCESS_KEY_ID: 
+      ECR_AWS_SECRET_ACCESS_KEY: 

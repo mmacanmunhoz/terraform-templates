@@ -15,18 +15,18 @@ stages:
           - task: AWSCLI@1
             inputs:
               awsCredentials: ''
-              regionName: 'us-east-2'
+              regionName: ''
               awsCommand: 'apigateway'
               awsSubCommand: 'put-rest-api'
-              awsArguments: '--rest-api-id vkj2r8eqfk --mode overwrite --body fileb://$(System.DefaultWorkingDirectory)/services/api/cqt-gateway.json'
+              awsArguments: '--rest-api-id  --mode overwrite --body fileb://$(System.DefaultWorkingDirectory)/services/api/cqt-gateway.json'
 
           - task: AWSCLI@1
             inputs:
               awsCredentials: ''
-              regionName: 'us-east-2'
+              regionName: ''
               awsCommand: 'apigateway'
               awsSubCommand: 'create-deployment'
-              awsArguments: '--rest-api-id gdfadlnscj --stage-name Stagging'
+              awsArguments: '--rest-api-id  --stage-name Stagging'
 
 
 

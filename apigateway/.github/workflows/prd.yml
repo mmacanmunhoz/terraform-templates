@@ -12,7 +12,7 @@ jobs:
   build-staging:
     uses: ./.github/workflows/main.yml
     with:
-      id_api_gateway: gdfadlnscj
-      environment: production
-      region: us-east-2
+      id_api_gateway: 
+      environment: 
+      region:
       path_contract: ./services/api/cqt-gateway.yml

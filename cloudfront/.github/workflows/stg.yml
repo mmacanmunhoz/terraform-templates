@@ -1,0 +1,25 @@
+name: Deploy Staging
+
+on:
+  push:
+    branches:
+      - develop
+    paths:
+
+
+  workflow_dispatch:
+
+jobs:
+  build-staging:
+    uses: ./.github/workflows/main.yml
+    with:
+      env_name: ""
+      app_name: ""
+      app_title: ""
+      bucket_name: ""
+      cf_distribution_id: 
+      build_dir: ./build/
+    secrets:
+      CI_AWS_ACCESS_KEY_ID: 
+      CI_AWS_SECRET_ACCESS_KEY: 
+      CI_AWS_REGION: 

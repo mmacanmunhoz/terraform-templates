@@ -1,0 +1,117 @@
+name: main
+
+on:
+  workflow_call:
+    inputs:
+      env_name:
+        required: true
+        type: string
+      app_name:
+        required: true
+        type: string
+      app_title:
+        required: true
+        type: string
+      bucket_name:
+        required: true
+        type: string
+      cf_distribution_id:
+        required: true
+        type: string
+      build_dir:
+        required: true
+        type: string
+      env_url:
+        required: true
+        type: string
+    secrets:
+      CI_AWS_ACCESS_KEY_ID:
+        required: true
+      CI_AWS_SECRET_ACCESS_KEY:
+        required: true
+      CI_AWS_REGION:
+        required: true
+      monitoring_app_key:
+        required: true
+      TRACKING_GTM_ID:
+        required: true
+
+
+jobs:
+  build:
+    environment: ${{ inputs.env_name }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [16.x]
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.workflow_run.head_branch }}
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v2.2.1
+        with:
+          pnpm-version: 5.4.12
+
+      - name: Install dependencies
+        run: pnpm i
+
+      - name: Make envfile
+        uses: SpicyPizza/create-envfile@v1.3
+        with:
+          envkey_SKIP_PREFLIGHT_CHECK: true
+          directory: packages/config/environments
+          file_name: .env
+          fail_on_empty: false
+
+      - name: Build app
+        run: pnpm ${{ inputs.app_name }}:build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ github.event.repository.name }}-artifact-${{ inputs.app_name }}-${{ github.sha }}
+          path: ${{ inputs.build_dir }}
+          retention-days: 1
+
+  deploy:
+    needs: build
+    environment:
+      name: ${{ inputs.env_name }}
+      url: ${{ inputs.env_url }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        id: download
+        with:
+          name: ${{ github.event.repository.name }}-artifact-${{ inputs.app_name }}-${{ github.sha }}
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.CI_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.CI_AWS_REGION }}
+
+      - name: Get modified files list
+        run: |
+          cd ${{steps.download.outputs.download-path}}
+          aws s3 sync . s3://${{ inputs.bucket_name }} --dryrun --delete --size-only| awk '{print $3}'|cut -d'/' -f2- > modified_files.txt
+      - name: Deploy app build to S3 bucket
+        run: |
+          cd ${{steps.download.outputs.download-path}}
+          aws s3 sync . s3://${{ inputs.bucket_name }} --delete
+      - name: Invalidation Cloudfront cache
+        run: |
+          aws cloudfront create-invalidation --distribution-id ${{ inputs.cf_distribution_id }} --paths "/*"
